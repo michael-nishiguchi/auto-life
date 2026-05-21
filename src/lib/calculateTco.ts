@@ -2,6 +2,8 @@ export interface TcoInput {
   annualMiles: number
   mpg: number
   gasPricePerGallon: number
+  premiumGasPricePerGallon: number
+  fuelType: 'regular' | 'premium' | 'unknown'
   insuranceAnnual: number
   maintenancePerMile: number
   repairsPerMile: number
@@ -47,6 +49,14 @@ export function validateTcoInput(input: TcoInput): string[] {
     errors.push('Gas price cannot be negative.')
   }
 
+  if (input.premiumGasPricePerGallon < 0) {
+    errors.push('Premium gas price cannot be negative.')
+  }
+
+  if (input.fuelType === 'unknown') {
+    errors.push('Fuel type is unknown for this vehicle. Enter a known fuel type source before calculating.')
+  }
+
   if (input.insuranceAnnual < 0) {
     errors.push('Insurance cannot be negative.')
   }
@@ -64,7 +74,8 @@ export function validateTcoInput(input: TcoInput): string[] {
 
 export function calculateTco(input: TcoInput): TcoResult {
   const annualFuelGallons = input.annualMiles / input.mpg
-  const annualFuelCost = annualFuelGallons * input.gasPricePerGallon
+  const effectiveGasPrice = input.fuelType === 'premium' ? input.premiumGasPricePerGallon : input.gasPricePerGallon
+  const annualFuelCost = annualFuelGallons * effectiveGasPrice
 
   const annualByCategory = {
     insurance: input.insuranceAnnual,

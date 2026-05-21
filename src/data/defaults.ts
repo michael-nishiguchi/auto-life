@@ -12,6 +12,8 @@ export const defaults = {
   annualMiles: 10952,
   mpg: 30,
   gasPricePerGallon: 4.452,
+  premiumGasPricePerGallon: 4.752,
+  fuelType: 'regular' as const,
   insuranceAnnual: 1126.79,
   maintenancePerMile: 0.028,
   repairsPerMile: 0.017,
@@ -49,11 +51,11 @@ export const sourceNotes: SourceNote[] = [
   {
     key: 'modelMpg',
     label: 'Vehicle catalog defaults',
-    sourceName: 'NHTSA vPIC API',
-    sourceUrl: 'https://vpic.nhtsa.dot.gov/api/',
+    sourceName: 'NHTSA vPIC API + FuelEconomy.gov API',
+    sourceUrl: 'https://www.fueleconomy.gov/feg/ws/index.shtml',
     retrievedAt: '2026-05-19',
     geography: 'United States',
-    note: 'Year/make/model options come from a locally cached NHTSA catalog. MPG and cost fields start from national planning defaults and should be adjusted for your exact trim and driving profile.',
+    note: 'Year/make/model options come from a locally cached NHTSA catalog. MPG and fuel type are enriched from FuelEconomy.gov where available; unknown values are shown as unknown instead of defaulting to an assumed value.',
   },
   {
     key: 'maintenancePerMile',

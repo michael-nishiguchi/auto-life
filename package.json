@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "vehicles:refresh": "tsx scripts/fetchVehicles.ts"
+    "vehicles:refresh": "tsx scripts/fetchVehicles.ts",
+    "vehicles:build-lookup": "tsx scripts/buildEpaFuelTypeLookup.ts"
   },
   "dependencies": {
     "react": "^19.2.6",

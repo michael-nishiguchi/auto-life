@@ -9,6 +9,7 @@ export interface VehicleProfile {
   repairsPerMile: number
   tiresPerMile: number
   lifetimeMiles: number
+  fuelType: 'regular' | 'premium'
 }
 
 // Model defaults are practical planning values. They should be user-editable.
@@ -24,6 +25,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.016,
     tiresPerMile: 0.011,
     lifetimeMiles: 220000,
+    fuelType: 'regular',
   },
   {
     id: '2022-honda-accord',
@@ -36,6 +38,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.016,
     tiresPerMile: 0.011,
     lifetimeMiles: 220000,
+    fuelType: 'regular',
   },
   {
     id: '2022-hyundai-elantra',
@@ -48,6 +51,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.016,
     tiresPerMile: 0.011,
     lifetimeMiles: 200000,
+    fuelType: 'regular',
   },
   {
     id: '2022-toyota-rav4',
@@ -60,6 +64,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.018,
     tiresPerMile: 0.013,
     lifetimeMiles: 230000,
+    fuelType: 'regular',
   },
   {
     id: '2022-honda-cr-v',
@@ -72,6 +77,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.018,
     tiresPerMile: 0.013,
     lifetimeMiles: 230000,
+    fuelType: 'regular',
   },
   {
     id: '2022-toyota-prius',
@@ -84,6 +90,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.015,
     tiresPerMile: 0.012,
     lifetimeMiles: 230000,
+    fuelType: 'regular',
   },
   {
     id: '2022-ford-f150',
@@ -96,6 +103,7 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.02,
     tiresPerMile: 0.016,
     lifetimeMiles: 250000,
+    fuelType: 'regular',
   },
   {
     id: '2022-toyota-tacoma',
@@ -108,5 +116,6 @@ export const vehicleProfiles: VehicleProfile[] = [
     repairsPerMile: 0.02,
     tiresPerMile: 0.016,
     lifetimeMiles: 250000,
+    fuelType: 'regular',
   },
 ]

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { calculateTco, type TcoInput, validateTcoInput } from './lib/calculateTco'
 import { defaults, sourceNotes } from './data/defaults'
-import { getVehicleAssumptions } from './lib/vehicleAssumptions'
 import { getTrimEngineOptions } from './lib/trimEngineOptions'
 import bundledVehiclesUrl from './data/vehicles.json?url'
 import './App.css'
@@ -13,6 +12,7 @@ interface CatalogVehicle {
   model: string
   combinedMpg?: number
   lifetimeMiles?: number
+  fuelType?: 'regular' | 'premium'
   label: string
   searchText: string
 }
@@ -38,6 +38,20 @@ function asCurrencyPrecise(value: number): string {
 
 function asNumber(value: number): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value)
+}
+
+function parseFuelType(value: unknown): 'regular' | 'premium' | undefined {
+  return value === 'regular' || value === 'premium' ? value : undefined
+}
+
+function fuelTypeLabel(value: 'regular' | 'premium' | undefined): string {
+  if (value === 'premium') {
+    return 'Premium (91+ octane)'
+  }
+  if (value === 'regular') {
+    return 'Regular (87 octane)'
+  }
+  return 'Unknown'
 }
 
 function App() {
@@ -107,6 +121,7 @@ function App() {
               model,
               combinedMpg: Number((vehicle as { combinedMpg?: number }).combinedMpg),
               lifetimeMiles: Number((vehicle as { lifetimeMiles?: number }).lifetimeMiles),
+              fuelType: parseFuelType((vehicle as { fuelType?: unknown }).fuelType),
               label,
               searchText: label.toLowerCase(),
             }
@@ -141,12 +156,18 @@ function App() {
     annualMiles: defaults.annualMiles,
     mpg: defaults.mpg,
     gasPricePerGallon: defaults.gasPricePerGallon,
+    premiumGasPricePerGallon: defaults.premiumGasPricePerGallon,
+    fuelType: 'unknown',
     insuranceAnnual: defaults.insuranceAnnual,
     maintenancePerMile: defaults.maintenancePerMile,
     repairsPerMile: defaults.repairsPerMile,
     tiresPerMile: defaults.tiresPerMile,
     lifetimeMiles: DEFAULT_LIFETIME_MILES,
   })
+
+
+
+  // ...existing code...
 
   const filteredVehicles = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -167,21 +188,19 @@ function App() {
   const selectedVehicleAssumptions = useMemo(() => {
     if (!selectedVehicle) {
       return {
-        combinedMpg: defaults.mpg,
-        lifetimeMiles: DEFAULT_LIFETIME_MILES,
+        combinedMpg: undefined,
+        lifetimeMiles: undefined,
       }
     }
-
-    const fallback = getVehicleAssumptions(selectedVehicle.year, selectedVehicle.make, selectedVehicle.model)
     return {
       combinedMpg:
         Number.isFinite(selectedVehicle.combinedMpg) && (selectedVehicle.combinedMpg ?? 0) > 0
           ? Number(selectedVehicle.combinedMpg)
-          : fallback.combinedMpg,
+          : undefined,
       lifetimeMiles:
         Number.isFinite(selectedVehicle.lifetimeMiles) && (selectedVehicle.lifetimeMiles ?? 0) > 0
           ? Number(selectedVehicle.lifetimeMiles)
-          : fallback.lifetimeMiles,
+          : undefined,
     }
   }, [selectedVehicle])
 
@@ -189,13 +208,16 @@ function App() {
     if (!selectedVehicle) {
       return getTrimEngineOptions(new Date().getFullYear(), 'unknown', 'unknown', defaults.mpg)
     }
+    const baseMpg = selectedVehicleAssumptions.combinedMpg ?? input.mpg
     return getTrimEngineOptions(
       selectedVehicle.year,
       selectedVehicle.make,
       selectedVehicle.model,
-      selectedVehicleAssumptions.combinedMpg,
+      baseMpg,
     )
-  }, [selectedVehicle, selectedVehicleAssumptions.combinedMpg])
+  }, [selectedVehicle, selectedVehicleAssumptions.combinedMpg, input.mpg])
+
+
 
   const selectedTrim = useMemo(
     () => trimEngineOptions.find((option) => option.id === selectedTrimId) ?? trimEngineOptions[0],
@@ -224,6 +246,8 @@ function App() {
     }
   }, [filteredVehicles, selectedVehicleId])
 
+
+
   const errors = useMemo(() => validateTcoInput(input), [input])
   const result = useMemo(() => {
     if (errors.length > 0) {
@@ -232,19 +256,25 @@ function App() {
     return calculateTco(input)
   }, [input, errors])
 
+
   function updateNumber<K extends keyof TcoInput>(key: K, value: number) {
     setInput((prev) => ({ ...prev, [key]: Number.isFinite(value) ? value : 0 }))
   }
 
+
+
   function applyVehicleDefaults() {
     setInput((prev) => ({
       ...prev,
-      mpg: selectedTrim?.mpg ?? selectedVehicleAssumptions.combinedMpg,
+      mpg: selectedTrim?.mpg ?? selectedVehicleAssumptions.combinedMpg ?? prev.mpg,
       insuranceAnnual: defaults.insuranceAnnual,
       maintenancePerMile: defaults.maintenancePerMile,
       repairsPerMile: defaults.repairsPerMile,
       tiresPerMile: defaults.tiresPerMile,
-      lifetimeMiles: selectedVehicleAssumptions.lifetimeMiles,
+      lifetimeMiles: selectedVehicleAssumptions.lifetimeMiles ?? prev.lifetimeMiles,
+      fuelType: selectedVehicle?.fuelType ?? 'unknown',
+      gasPricePerGallon: defaults.gasPricePerGallon,
+      premiumGasPricePerGallon: defaults.premiumGasPricePerGallon,
     }))
   }
 
@@ -264,25 +294,26 @@ function App() {
       combinedMpg:
         Number.isFinite(nextVehicle.combinedMpg) && (nextVehicle.combinedMpg ?? 0) > 0
           ? Number(nextVehicle.combinedMpg)
-          : getVehicleAssumptions(nextVehicle.year, nextVehicle.make, nextVehicle.model).combinedMpg,
+          : undefined,
       lifetimeMiles:
         Number.isFinite(nextVehicle.lifetimeMiles) && (nextVehicle.lifetimeMiles ?? 0) > 0
           ? Number(nextVehicle.lifetimeMiles)
-          : getVehicleAssumptions(nextVehicle.year, nextVehicle.make, nextVehicle.model).lifetimeMiles,
+          : undefined,
     }
     const trimOptionsForVehicle = getTrimEngineOptions(
       nextVehicle.year,
       nextVehicle.make,
       nextVehicle.model,
-      assumptions.combinedMpg,
+      assumptions.combinedMpg ?? input.mpg,
     )
     const nextTrim = trimOptionsForVehicle[0]
     setSelectedTrimId(nextTrim.id)
 
     setInput((prev) => ({
       ...prev,
-      mpg: nextTrim.mpg,
-      lifetimeMiles: assumptions.lifetimeMiles,
+      mpg: nextTrim?.mpg ?? assumptions.combinedMpg ?? prev.mpg,
+      lifetimeMiles: assumptions.lifetimeMiles ?? prev.lifetimeMiles,
+      fuelType: nextVehicle.fuelType ?? 'unknown',
     }))
   }
 
@@ -411,14 +442,40 @@ function App() {
             />
           </label>
 
+
+          {selectedVehicle && (
+            <div className="muted">
+              Fuel type: <strong>{fuelTypeLabel(selectedVehicle.fuelType)}</strong>
+            </div>
+          )}
+
+          {selectedVehicle && selectedVehicleAssumptions.combinedMpg === undefined && (
+            <p className="muted small">Catalog fuel economy is unknown for this vehicle. Enter your MPG manually.</p>
+          )}
+
+          {selectedVehicle && selectedVehicleAssumptions.lifetimeMiles === undefined && (
+            <p className="muted small">Catalog lifetime miles is unknown for this vehicle. Enter your estimate manually.</p>
+          )}
+
           <label>
-            Gas price per gallon
+            Regular gas price per gallon
             <input
               type="number"
               min="0"
               step="0.001"
               value={input.gasPricePerGallon}
               onChange={(event) => updateNumber('gasPricePerGallon', Number(event.target.value))}
+            />
+          </label>
+
+          <label>
+            Premium gas price per gallon
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              value={input.premiumGasPricePerGallon}
+              onChange={(event) => updateNumber('premiumGasPricePerGallon', Number(event.target.value))}
             />
           </label>
           {gasPriceNote && (
@@ -531,7 +588,8 @@ function App() {
           <p className="muted selected-vehicle">
             Vehicle: {selectedVehicle ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` : 'None selected'}
           </p>
-            {selectedTrim && <p className="muted small">Trim/Engine: {selectedTrim.label}</p>}
+          {selectedTrim && <p className="muted small">Trim/Engine: {selectedTrim.label}</p>}
+          {selectedVehicle && <p className="muted small">Fuel: {fuelTypeLabel(selectedVehicle.fuelType)}</p>}
           {!result && <p className="muted">Enter valid values to calculate results.</p>}
 
           {result && (
@@ -611,7 +669,7 @@ function App() {
                 Fuel volume estimate: {asNumber(result.annualFuelGallons)} gallons per year at {input.mpg} MPG.
               </p>
               <p className="muted small">
-                Expected lifetime for selected model: {asNumber(selectedVehicleAssumptions.lifetimeMiles)} miles.
+                Expected lifetime for selected model: {selectedVehicleAssumptions.lifetimeMiles ? `${asNumber(selectedVehicleAssumptions.lifetimeMiles)} miles` : 'Unknown'}.
               </p>
             </>
           )}
